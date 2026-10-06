@@ -1,0 +1,4 @@
+Program line=1 column=1
+  Declaration line=1 column=1 type=bool name=active mutable=false
+    Value
+      Boolean line=1 column=15 value=true
