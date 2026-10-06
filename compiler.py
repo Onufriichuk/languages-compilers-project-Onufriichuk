@@ -360,6 +360,11 @@ class IdentifierNode(ExprNode):
 
 
 class Parser:
+    TYPE_LIMITS = {
+        "num32": 2147483647,
+        "num64": 9223372036854775807,
+    }
+
     TYPE_TOKENS = {
         TokenKind.NUM32,
         TokenKind.NUM64,
@@ -483,6 +488,19 @@ class Parser:
         value = self.parse_expression()
         self.eat(TokenKind.RBRACE)
         self.eat(TokenKind.SEMICOLON)
+
+        if (
+            type_token.text in self.TYPE_LIMITS
+            and isinstance(value, IntegerNode)
+        ):
+            maximum = self.TYPE_LIMITS[type_token.text]
+
+            if value.value > maximum:
+                raise CompilationError(
+                    value.line,
+                    value.column,
+                    f"integer value {value.value} overflows {type_token.text}",
+                )
 
         return DeclarationNode(
             type_token.line,
