@@ -1,0 +1,6 @@
+fn add := (num32 a, num32 b) -> num32
+{
+num32 result{a + b}
+exit result
+}
+exit add(1, add(2, 3))

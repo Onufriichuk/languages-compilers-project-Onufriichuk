@@ -1,0 +1,2 @@
+num32 a{true};
+exit 0

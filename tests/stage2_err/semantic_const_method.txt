@@ -1,0 +1,10 @@
+struct Counter {
+    num32 mut value
+    fn increase := () -> num32 {
+        value := value + 1
+        exit value
+    }
+}
+Counter c{1};
+num32 result{c.increase()};
+exit result

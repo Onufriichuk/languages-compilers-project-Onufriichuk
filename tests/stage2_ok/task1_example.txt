@@ -1,0 +1,33 @@
+struct Point
+{
+ num32 mut x
+ num32 mut y
+ fn d2 := () -> num32
+ {
+  num32 r{x * x + y * y}
+  exit r
+ }
+ fn shift := (num32 dx) -> num32
+ {
+  x := x + dx
+  exit x
+ }
+}
+struct Circle
+{
+ Point center
+ num32 radius
+ fn area2 := () -> num32
+ {
+  num32 a{radius * radius * 3}
+  exit a
+ }
+}
+Point mut p{3, 4}
+num32 d{p.d2()}
+num32 nx{p.shift(2)}
+Circle c{p, 2}
+num32 a{c.area2()}
+num32 cd{c.center.d2()}
+num32 result{d + nx + a + cd}
+exit result

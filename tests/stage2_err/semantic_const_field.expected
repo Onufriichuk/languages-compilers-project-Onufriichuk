@@ -1,0 +1,1 @@
+compilation error: line 5:1: cannot write through field 'x': it is not mut

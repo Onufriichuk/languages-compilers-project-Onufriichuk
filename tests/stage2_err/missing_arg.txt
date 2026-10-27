@@ -1,0 +1,6 @@
+fn f := (num32 x) -> num32
+{
+exit x
+}
+num32 a{f()}
+exit 0

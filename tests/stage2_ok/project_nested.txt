@@ -1,0 +1,12 @@
+struct Point {
+ num32 mut x
+ num32 mut y
+}
+struct Segment {
+ Point mut start
+ Point end
+}
+Segment mut s{{3,4},{8,9}};
+s.start.x := 7;
+print(s);
+exit s.start.x
