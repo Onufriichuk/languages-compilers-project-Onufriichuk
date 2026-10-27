@@ -1,0 +1,7 @@
+Program line=1 column=1
+  Declaration line=1 column=1 type=num32 name=x mutable=true
+    Value
+      Integer line=1 column=15 value=10
+  Assignment line=2 column=1 name=x
+    Value
+      Integer line=2 column=6 value=20

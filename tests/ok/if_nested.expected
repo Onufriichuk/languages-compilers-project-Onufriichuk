@@ -1,0 +1,25 @@
+Program line=1 column=1
+  Declaration line=1 column=1 type=bool name=active mutable=false
+    Value
+      Boolean line=1 column=15 value=true
+  Declaration line=2 column=1 type=bool name=ready mutable=false
+    Value
+      Boolean line=2 column=14 value=false
+  Declaration line=3 column=1 type=num32 name=x mutable=true
+    Value
+      Integer line=3 column=15 value=10
+  If line=4 column=1
+    Condition
+      Identifier line=4 column=4 name=active
+    Then
+      If line=5 column=5
+        Condition
+          Identifier line=5 column=8 name=ready
+        Then
+          Assignment line=6 column=9 name=x
+            Value
+              Integer line=6 column=14 value=20
+        Else
+          Assignment line=8 column=9 name=x
+            Value
+              Integer line=8 column=14 value=30

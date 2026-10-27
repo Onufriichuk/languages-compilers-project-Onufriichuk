@@ -1,0 +1,11 @@
+num32 mut x { 10 };
+num64 y { 100 };
+bool active { true };
+
+x := 20;
+
+if active {
+    x := 30;
+} else {
+    x := 40;
+}

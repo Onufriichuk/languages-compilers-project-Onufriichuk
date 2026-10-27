@@ -1,0 +1,8 @@
+Program line=1 column=1
+  Declaration line=1 column=1 type=bool name=result mutable=false
+    Value
+      BinaryExpr line=1 column=18 operator=!=
+        Left
+          Integer line=1 column=15 value=10
+        Right
+          Integer line=1 column=21 value=20
