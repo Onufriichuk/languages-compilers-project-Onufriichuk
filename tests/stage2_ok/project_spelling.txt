@@ -1,0 +1,11 @@
+struct Counter {
+  num32 mut value
+  fn plus := (num32 amount) -> num32 {
+    value := value + amount;
+    exit value;
+  }
+}
+Counter mut c{4};
+num32 a{c.plus(6)};
+print(a);
+exit a

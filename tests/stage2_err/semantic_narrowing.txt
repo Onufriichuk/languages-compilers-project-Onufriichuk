@@ -1,0 +1,3 @@
+num64 big{6000000000};
+num32 small{big};
+exit 0

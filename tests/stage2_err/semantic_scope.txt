@@ -1,0 +1,6 @@
+num32 mut x{1};
+if true {
+    num32 y{5};
+}
+x := y;
+exit 0
