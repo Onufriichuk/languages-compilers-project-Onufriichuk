@@ -1,322 +1,192 @@
-# Languages and Compilers Course Project
+# Languages and Compilers — Project Stage 2
 
-This repository contains Stage 1 of the Languages and Compilers course project.
+## Overview
 
-The project implements a small programming language with a hand-written byte-based lexer, a recursive-descent parser, and an Abstract Syntax Tree (AST).
+This project extends the custom programming language from Stage 1 with functions, structures, member functions, input/output operations, semantic analysis, and LLVM IR code generation.
 
-## Language Syntax and Features
+The original Stage 1 syntax (`num32`, `num64`, `bool`, `mut`, `:=`, `if/else`) remains supported.
 
-### Integer Types
+## Setup and Usage
 
-The language supports two integer types: `num32` and `num64`.
-
-```text
-num32 x { 10 };
-num64 y { 100 };
-```
-
-### Integer Overflow
-
-Integer literal values are checked against the range of their declared type.
-
-`num32` supports values from `0` to `2147483647`.
-
-`num64` supports values from `0` to `9223372036854775807`.
-
-The following declarations are valid:
-
-```text
-num32 x { 2147483647 };
-num64 y { 9223372036854775807 };
-```
-
-A literal value larger than the maximum value of its declared integer type causes a compilation error.
-
-```text
-num32 x { 2147483648 };
-```
-
-Negative integer literals are not part of the current language grammar.
-
-### Boolean Type
-
-The language supports the `bool` type and the boolean values `true` and `false`.
-
-```text
-bool active { true };
-bool ready { false };
-```
-
-### Immutable Variables
-
-A variable is immutable by default.
-
-```text
-num32 x { 10 };
-```
-
-### Mutable Variables
-
-The `mut` keyword declares a mutable variable.
-
-```text
-num32 mut x { 10 };
-```
-
-### Assignment
-
-Assignment uses the `:=` operator.
-
-```text
-num32 mut x { 10 };
-x := 20;
-```
-
-### Arithmetic Expressions
-
-The language supports `+`, `-`, `*`, and `/`.
-
-```text
-num32 a { 1 + 2 };
-num32 b { 5 - 2 };
-num32 c { 2 * 3 };
-num32 d { 8 / 2 };
-```
-
-Normal arithmetic precedence is supported.
-
-```text
-num32 x { 1 + 2 * 3 };
-```
-
-Parentheses can be used to change the evaluation order.
-
-```text
-num32 x { (1 + 2) * 3 };
-```
-
-### Comparison Operators
-
-The language supports equality and inequality comparisons using `==` and `!=`.
-
-```text
-bool same { 10 == 10 };
-bool different { 10 != 20 };
-```
-
-### If Statement
-
-An `if` statement contains a condition and at least one statement in its block.
-
-```text
-bool active { true };
-num32 mut x { 10 };
-
-if active {
-    x := 20;
-}
-```
-
-### If / Else Statement
-
-The `else` block is optional. If present, it must also contain at least one statement.
-
-```text
-bool active { true };
-num32 mut x { 10 };
-
-if active {
-    x := 20;
-} else {
-    x := 30;
-}
-```
-
-### Nested If Statements
-
-`if` statements can be nested.
-
-```text
-bool active { true };
-bool ready { false };
-num32 mut x { 10 };
-
-if active {
-    if ready {
-        x := 20;
-    } else {
-        x := 30;
-    }
-}
-```
-
-## Grammar
-
-The complete EBNF grammar is stored in:
-
-```text
-grammar.ebnf
-```
-
-The parser accepts the syntax described by this grammar.
-
-The language uses a custom declaration syntax in which the initializer expression is placed inside braces.
-
-```text
-num32 x { 10 };
-```
-
-Mutable variables use the `mut` keyword:
-
-```text
-num32 mut x { 10 };
-```
-
-Assignment uses `:=`:
-
-```text
-x := 20;
-```
-
-## Lexer
-
-The lexer is hand-written and processes source code as bytes.
-
-Each token stores:
-
-- token kind;
-- token text;
-- line number;
-- column number.
-
-The lexer does not use regular expressions, `split()`, a lexer generator, or another generated lexer implementation.
-
-## Parser and AST
-
-The parser is implemented using recursive descent.
-
-It reads the token stream produced by the lexer and builds an Abstract Syntax Tree.
-
-The AST contains a class hierarchy for programs, statements, expressions, declarations, assignments, if statements, binary expressions, literals, and identifiers.
-
-Each AST node stores its source line and column.
-
-## Build Requirements
-
-The compiler is implemented in Python 3.
-
-There are no external dependencies and no separate build step is required.
-
-Check that Python 3 is installed:
+Requirements: Python 3, `llvmlite`, and Clang.
 
 ```bash
-python3 --version
+python3 -m pip install llvmlite
+
+# Print AST
+python3 compiler.py --ast tests/ok/if_else.txt
+
+# Generate LLVM IR
+python3 compiler.py tests/stage2_ok/project_spelling.txt output.ll
+
+# Compile and run
+clang output.ll -o program
+./program
 ```
 
-The compiler source can also be checked for Python syntax errors with:
-
-```bash
-python3 -m py_compile compiler.py
-```
-
-## Running the Compiler
-
-Place a program in a source file such as `input.txt`.
-
-Run:
-
-```bash
-python3 compiler.py --ast input.txt
-```
-
-Example `input.txt`:
-
-```text
-num32 mut x { 10 };
-num64 y { 100 };
-bool active { true };
-
-x := 20;
-
-if active {
-    x := 30;
-} else {
-    x := 40;
-}
-```
-
-The compiler prints an indented description of the generated AST.
-
-## Error Reporting
-
-Lexical and syntax errors are printed to standard error in the following format:
+Compilation errors are reported to stderr as:
 
 ```text
 compilation error: line L:C: message
 ```
 
-The compiler exits with a non-zero exit code when compilation fails and does not print an AST.
+Compilation failures return a non-zero exit code and do not create an output file.
 
-Integer literal overflow errors use the same error format.
+## Language Features
 
-## Running the Tests
+### 1. Variables and Conditions (Stage 1)
 
-Valid programs and their expected AST output are stored in:
-
-```text
-tests/ok/
-```
-
-Invalid programs and their expected error output are stored in:
+Types are `num32` (32-bit integer), `num64` (64-bit integer), and `bool`. Variables are immutable unless declared with `mut`.
 
 ```text
-tests/err/
+num32 mut x{5};
+x := x + 3;
+
+if x == 8 {
+    print(x);
+} else {
+    print(0);
+}
 ```
 
-Each `.txt` test file has a corresponding `.expected` file.
+Arithmetic supports `+`, `-`, `*`, `/`, parentheses, and comparisons `==`, `!=`.
 
-Run the complete test suite with:
+### 2. Functions
+
+Functions have typed parameters, a result type, and an `exit` statement. Calls are expressions and may be nested, recursive, or reference functions declared later.
+
+```text
+fn twice := (num32 x) -> num32 {
+    exit x + x
+}
+
+num32 result{twice(twice(3))};
+print(result);
+exit 0
+```
+
+**Rules:** Arguments must match parameter count and types. Return values must match the declared result type. Function signatures are collected before function bodies are checked, allowing recursion and forward calls.
+
+### 3. Structures and Fields
+
+Structures contain typed, mutable or immutable fields. Objects must initialize every field in declaration order. Field access may be nested.
+
+```text
+struct Point {
+    num32 mut x
+    num32 y
+}
+
+Point mut p{3, 4};
+p.x := 7;
+print(p);
+exit 0
+```
+
+**Rules:** Fields must exist. Assignments require every relevant link in the access chain to be mutable. Immutable fields cannot be reassigned.
+
+### 4. Member Functions
+
+Member functions are declared inside structures and can access their fields directly.
+
+```text
+struct Counter {
+    num32 mut value
+
+    fn add := (num32 amount) -> num32 {
+        value := value + amount
+        exit value
+    }
+}
+
+Counter mut c{4};
+print(c.add(3));
+exit 0
+```
+
+**Rules:** A member function that modifies fields requires a mutable receiver. Inside a member function, names are resolved in this order: parameters and locals, then structure fields and methods, then globals.
+
+### 5. Input and Output
+
+`read()` reads one integer from stdin and returns `num32`. It accepts no arguments.
+
+`print()` accepts one integer, boolean, string literal, or structure object and adds a newline.
+
+```text
+num32 x{read()};
+print("Input:");
+print(x);
+exit 0
+```
+
+Booleans print as `true` or `false`. Objects print as `Point{x: 3, y: 4}`, in field declaration order, including nested objects. `num32` uses `%d`; `num64` uses `%lld`.
+
+## Semantic Analysis
+
+A separate semantic pass checks the AST before LLVM IR generation.
+
+| Rule | Validation |
+|---|---|
+| Names and scopes | Declaration before use; no duplicate declarations in one scope |
+| Types | Compatible assignment, expression, parameter, and return types |
+| Mutability | No writes to constant variables, fields, or immutable chains |
+| Functions | Correct argument count and types; valid results |
+| Structures | Existing fields, correct initializers and field types |
+| Methods | Mutating methods require mutable objects |
+| Conversions | `num32` may widen to `num64`; implicit narrowing is rejected |
+| Overflow | Integer literal bounds are checked; runtime arithmetic has no overflow traps |
+
+`bool` cannot be used in numeric arithmetic. Each function must return a compatible value using `exit`. Stage 1 programs may omit a top-level `exit`.
+
+## LLVM IR Generation
+
+LLVM IR is generated through `llvmlite.ir.IRBuilder`, not manually assembled strings.
+
+- Variables use `alloca`, `store`, and `load`.
+- Conditions use basic blocks and conditional branches.
+- Functions are declared before their bodies; internal names avoid runtime symbol conflicts.
+- Structures use identified LLVM types and field indexes accessed through GEP.
+- Member functions receive the object pointer as an implicit first parameter.
+- `read()` and `print()` use external `scanf` and `printf` declarations with global format strings.
+
+## Testing
 
 ```bash
 python3 run_tests.py
+python3 run_stage2_tests.py
 ```
 
-The test runner executes all valid and invalid cases, compares actual output with the expected output, and reports passed and failed tests.
+| Tests | Valid | Invalid |
+|---|---:|---:|
+| Stage 1 | 18 | 17 |
+| Stage 2 | 16 | 10 |
+| **Total** | **34** | **27** |
 
-The current test suite contains:
+Latest verified results: **35/35 Stage 1** and **26/26 Stage 2** tests passed.
 
-```text
-18 valid tests
-17 error tests
-35 tests total
-```
+Stage 2 valid tests compile to LLVM IR, build with Clang, execute, and compare exact stdout with `.expected` files. Tests with `.in` files provide stdin. Invalid tests compare compiler diagnostics with expected errors.
+
+Tests cover functions, recursion, structures, fields, methods, input/output, invalid arguments, incorrect result types, unknown fields, and immutable assignments.
 
 ## Project Structure
 
-```text
-.
-├── README.md
-├── ai_usage.txt
-├── compiler.py
-├── grammar.ebnf
-├── input.txt
-├── run_tests.py
-└── tests
-    ├── ok
-    └── err
-```
+- `compiler.py` — CLI and Stage 1 compatibility.
+- `src/stage1_frontend.py` — original lexer, parser, and AST.
+- `src/engine.py` — extended lexer/parser, semantic checks, and LLVM generator.
+- `grammar.ebnf` — language grammar.
+- `tests/` — valid and invalid examples.
+- `run_tests.py`, `run_stage2_tests.py` — test scripts.
 
-## Stage 1 Scope
+## Optional Bonus: VS Code Extension
 
-Stage 1 implements:
+`vscode-stage2-syntax/` contains a syntax-highlighting extension for the custom language. Open the extension folder in VS Code, press `F5`, and open a `.stage2` file to test highlighting.
 
-- the language syntax and EBNF grammar;
-- a hand-written byte-based lexer;
-- a recursive-descent parser;
-- an AST class hierarchy;
-- AST output;
-- lexical and syntax error reporting;
-- integer literal overflow checks for `num32` and `num64`;
-- automated valid and invalid test cases.
+## Known Limitations
 
-Full semantic analysis and code generation are not implemented in Stage 1.
+Some Stage 2 diagnostics may reference positions in normalized source rather than the original input because the compiler uses a syntax compatibility layer. This requires further correction to fully satisfy source-position requirements.
+
+## Submission
+
+Stage 2 is developed in the `stage2` branch created from `main`. Submit a pull request into `main`, request `vovaskochko` as reviewer, and do not merge before review.
+
+Submit the PR link and completed `ai_usage_2.txt` in Moodle. The original Stage 1 disclosure remains in `ai_usage.txt`.
