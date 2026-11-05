@@ -1,0 +1,5 @@
+num32 unused{2}
+num32 unused2{unused + 5}
+num32 used{read()}
+print(used)
+exit 0

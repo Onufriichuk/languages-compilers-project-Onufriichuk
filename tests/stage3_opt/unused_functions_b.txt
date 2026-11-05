@@ -1,0 +1,8 @@
+fn unused_chain := (num32 x) -> num32 {
+ exit other_unused(x)
+}
+fn other_unused := (num32 x) -> num32 {
+ exit x + 1
+}
+print(7)
+exit 0

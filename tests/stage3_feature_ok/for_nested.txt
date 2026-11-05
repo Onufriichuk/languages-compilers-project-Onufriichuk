@@ -1,0 +1,9 @@
+num32 mut count{0}
+for row in range(0, 3) {
+ for col in range(0, 2) {
+  num32 one{row + col}
+  count := count + one
+ }
+}
+print(count)
+exit 0

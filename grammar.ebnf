@@ -18,7 +18,8 @@ parameter = type, identifier ;
 block = "{", { statement | exit_statement }, "}" ;
 
 statement = declaration | assignment | if_statement
-          | while_statement | print_statement ;
+          | while_statement | for_statement | break_statement
+          | print_statement ;
 
 declaration = type, [ "mut" ], identifier,
               "{", initial_value, "}", [ ";" ] ;
@@ -67,3 +68,9 @@ identifier = letter, { letter | digit | "_" } ;
 letter = "A" | ... | "Z" | "a" | ... | "z" ;
 digit = "0" | ... | "9" ;
 character = ? any character except unescaped double quote ? ;
+
+(* Stage 3: counted loops with optional early exit. *)
+for_statement = "for", identifier, "in", "range", "(", expression,
+                ",", expression, ")", block ;
+break_statement = "break", [ ";" ] ;
+(* A break statement is legal only within a for/while body. *)

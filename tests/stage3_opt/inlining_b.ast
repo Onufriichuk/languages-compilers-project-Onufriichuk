@@ -1,0 +1,15 @@
+Program
+  Decl x i32 const
+    Const 8
+  Decl __inlined_combine_1_left i32 const
+    Var x
+  Decl __inlined_combine_1_right i32 const
+    Const 2
+  Decl y i32 const
+    BinOp +
+      Var __inlined_combine_1_left
+      Var __inlined_combine_1_right
+  Print
+    Var y
+  Exit
+    Const 0

@@ -1,0 +1,7 @@
+Program
+  Decl used i32 const
+    Call read
+  Print
+    Var used
+  Exit
+    Const 0

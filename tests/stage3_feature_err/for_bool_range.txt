@@ -1,0 +1,4 @@
+for i in range(true, 3) {
+ print(i)
+}
+exit 0

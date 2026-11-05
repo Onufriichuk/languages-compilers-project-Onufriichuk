@@ -8,6 +8,7 @@ import sys
 from difflib import SequenceMatcher
 from bisect import bisect_right
 from pathlib import Path
+from src import optimizer
 from src import engine
 from src import stage1_frontend
 from llvmlite import ir
@@ -43,7 +44,7 @@ def normalize(text):
 
 
             prefix = current[:]
-            structural = (not brace_kind and prefix and prefix[0] in {'if','else','while','struct','fn'}) or (prefix and prefix[0] in {'if','else','while','struct','fn'} and not any(k == 'init' for k in brace_kind)) or (not prefix and (not brace_kind or brace_kind[-1] == 'block'))
+            structural = (not brace_kind and prefix and prefix[0] in {'if','else','while','for','struct','fn'}) or (prefix and prefix[0] in {'if','else','while','for','struct','fn'} and not any(k == 'init' for k in brace_kind)) or (not prefix and (not brace_kind or brace_kind[-1] == 'block'))
             if structural:
                 if current:
                     result.append(' '.join(current))
@@ -127,7 +128,7 @@ def backend_ast(source):
 def codegen(tree):
     checker = engine.SemanticChecker()
     checker.check(tree)
-    module = ir.Module(name='stage2')
+    module = ir.Module(name='stage3')
     module.triple = llvm.get_default_triple()
     main = ir.Function(module, ir.FunctionType(engine.I32, []), name='main')
     builder = ir.IRBuilder(main.append_basic_block('entry'))
@@ -143,12 +144,15 @@ def codegen(tree):
 
 
 def main():
-    if len(sys.argv)!=3:
-        print('usage: python3 compiler.py [--ast] input.txt | python3 compiler.py input.txt output.ll',file=sys.stderr)
+    args = sys.argv[1:]
+    optimize_mode = '--optimize' in args
+    ast_mode = '--ast' in args
+    args = [x for x in args if x not in {'--optimize', '--ast'}]
+    if len(args) != (1 if ast_mode else 2):
+        print('usage: python3 compiler.py [--optimize] [--ast] input.txt [output.ll]', file=sys.stderr)
         return 1
-    ast_mode = sys.argv[1] == '--ast'
-    source = Path(sys.argv[2] if ast_mode else sys.argv[1])
-    destination = None if ast_mode else Path(sys.argv[2])
+    source = Path(args[0])
+    destination = None if ast_mode else Path(args[1])
     if destination:
         destination.unlink(missing_ok=True)
     normalized_source = None
@@ -157,19 +161,24 @@ def main():
         data=source.read_text(encoding='utf-8')
         if ast_mode:
 
-            try:
-                stage1_tree=stage1_frontend.compile_file(str(source))
-                print('\n'.join(stage1_frontend.dump_ast(stage1_tree)))
-                return 0
-            except stage1_frontend.CompilationError:
-                if not re.search(r'\b(struct|fn|exit|print|read|while)\b', data):
-                    raise
+            if not optimize_mode:
+                try:
+                    stage1_tree=stage1_frontend.compile_file(str(source))
+                    print('\n'.join(stage1_frontend.dump_ast(stage1_tree)))
+                    return 0
+                except stage1_frontend.CompilationError:
+                    if not re.search(r'\b(struct|fn|exit|print|read|while|for)\b', data):
+                        raise
             normalized_source = normalize(data)
             tree=backend_ast(normalized_source)
+            if optimize_mode:
+                tree=optimizer.optimize(tree)
             print('\n'.join(tree.dump()))
         else:
             normalized_source = normalize(data)
             tree=backend_ast(normalized_source)
+            if optimize_mode:
+                tree=optimizer.optimize(tree)
             destination.write_text(codegen(tree),encoding='utf-8')
         return 0
     except (engine.CompileError, stage1_frontend.CompilationError) as exc:

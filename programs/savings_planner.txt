@@ -1,0 +1,25 @@
+struct Savings {
+ num32 mut total
+ fn add := (num32 value) -> num32 {
+  total := total + value
+  exit total
+ }
+}
+fn twice := (num32 x) -> num32 {
+ exit x + x
+}
+print("SAVINGS PLANNER")
+print("How many deposits?")
+num32 count{read()}
+Savings mut account{0}
+for day in range(0, count) {
+ print("Enter deposit:")
+ num32 deposit{read()}
+ print("Running total:")
+ print(account.add(deposit))
+}
+print("Final saved:")
+print(account.total)
+print("Double savings goal:")
+print(twice(account.total))
+exit 0

@@ -1,0 +1,9 @@
+num32 mut sum{0}
+for k in range(0, 10) {
+ if k == 4 {
+  break
+ }
+ sum := sum + k
+}
+print(sum)
+exit 0

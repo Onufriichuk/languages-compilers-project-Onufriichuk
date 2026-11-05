@@ -1,0 +1,12 @@
+Program
+  Decl result i32 mut
+    Const 3
+  Assign
+    Var result
+    BinOp +
+      Var result
+      Const 1
+  Print
+    Var result
+  Exit
+    Const 0

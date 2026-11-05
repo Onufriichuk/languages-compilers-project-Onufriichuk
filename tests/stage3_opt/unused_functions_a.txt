@@ -1,0 +1,8 @@
+fn dead := (num32 x) -> num32 {
+ exit x + 100
+}
+fn alive := (num32 x) -> num32 {
+ exit x + 2
+}
+print(alive(5))
+exit 0

@@ -457,6 +457,20 @@ class WhileNode(StmtNode):
 
         return lines
 
+class ForNode(StmtNode):
+    def __init__(self, line, column, name, start, stop, body):
+        super().__init__(line, column)
+        self.name, self.start, self.stop, self.body = name, start, stop, body
+    def dump(self, indent=0):
+        lines = [' ' * indent + f'For {self.name}']
+        for part in (self.start, self.stop, self.body):
+            lines.extend(part.dump(indent + 2))
+        return lines
+
+class BreakNode(StmtNode):
+    def dump(self, indent=0):
+        return [' ' * indent + 'Break']
+
 class NotNode(ExprNode):
     def __init__(self, line, column, operand):
         super().__init__(line, column)
@@ -957,6 +971,13 @@ class Parser:
                 return self.parse_lambda()
             raise CompileError(f"line {tok.line}:{tok.column}: function inside block needs capture list")
 
+        if tok.kind == "keyword" and tok.text == "for":
+            return self.parse_for()
+
+        if tok.kind == "keyword" and tok.text == "break":
+            self.eat()
+            return BreakNode(tok.line, tok.column)
+
         if tok.kind == "keyword" and tok.text == "print":
             self.eat()
             self.expect_kind("lparen", "expected '(' after print")
@@ -1124,6 +1145,24 @@ class Parser:
             condition,
             body,
         )
+
+    def parse_for(self):
+        token = self.expect_text('for', "expected 'for'")
+        name = self.expect_kind('identifier', 'expected loop variable')
+        self.expect_text('in', "expected 'in' after loop variable")
+        self.expect_text('range', "expected 'range' in for loop")
+        self.expect_text('(', "expected '(' after range")
+        start = self.parse_expr()
+        self.expect_text(',', "expected ',' in range")
+        stop = self.parse_expr()
+        self.expect_text(')', "expected ')' after range")
+        if self.peek() is not None:
+            tok = self.peek()
+            raise CompileError(f"line {tok.line}:{tok.column}: unexpected '{tok.text}' after for range")
+        if not self.next_line() or self.peek() is None or self.peek().kind != 'lbrace' or len(self.toks) != 1:
+            raise CompileError(f"line {token.line}:{token.column}: expected '{{' after for range")
+        body = self.parse_block()
+        return ForNode(token.line, token.column, name.text, start, stop, body)
 
     def parse_block(self):
         open_tok = self.peek()
@@ -1603,6 +1642,7 @@ class SemanticChecker:
         self.program = None
         self.lambda_names = set()
         self.forbidden_outer = set()
+        self.loop_depth = 0
 
     def lookup(self, node, name):
         for frame in reversed(self.scopes):
@@ -1803,6 +1843,12 @@ class SemanticChecker:
         if isinstance(node, IfNode):
             return self.visit_if(node)
 
+        if isinstance(node, ForNode):
+            return self.visit_for(node)
+        if isinstance(node, BreakNode):
+            if self.loop_depth == 0:
+                raise CompileError(f"line {node.line}:{node.column}: break outside loop")
+            return
         if isinstance(node, WhileNode):
             return self.visit_while(node)
         if isinstance(node, PrintNode):
@@ -2400,9 +2446,33 @@ class SemanticChecker:
                 f"the condition of 'while' must be bool, got {condition_type}"
             )
 
-        self.visit_block(
-            node.body
-        )
+        self.loop_depth += 1
+        try:
+            self.visit_block(node.body)
+        finally:
+            self.loop_depth -= 1
+
+    def visit_for(self, node):
+        start_type = self.visit_expr(node.start)
+        stop_type = self.visit_expr(node.stop)
+        if start_type not in {'i32', 'i64'} or stop_type not in {'i32', 'i64'}:
+            raise CompileError(f"line {node.line}:{node.column}: range bounds must be integers")
+        node.type_name = 'i64' if 'i64' in (start_type, stop_type) else 'i32'
+        self.scopes.append({})
+        try:
+            if node.name in self.scopes[-1]:
+                raise CompileError(f"line {node.line}:{node.column}: duplicate loop variable")
+            decl = ParamNode(node.line, node.column, node.name, node.type_name)
+            decl.mutable = False
+            node.loop_decl = decl
+            self.scopes[-1][node.name] = decl
+            self.loop_depth += 1
+            try:
+                self.visit_block(node.body)
+            finally:
+                self.loop_depth -= 1
+        finally:
+            self.scopes.pop()
 
     def visit_not(self, node):
         operand_type = self.visit_expr(
@@ -2528,6 +2598,7 @@ class CodeGen:
         self.field_layout = {}
         self.string_count = 0
         self.printf_formats = {}
+        self.loop_exit_stack = []
         self.scanf = ir.Function(module, ir.FunctionType(I32, [ir.PointerType(I8)], var_arg=True), name="scanf")
 
         self.bool_fmt = self.make_string(
@@ -2746,6 +2817,13 @@ class CodeGen:
         if isinstance(node, IfNode):
             return self.visit_if(node)
 
+        if isinstance(node, ForNode):
+            return self.visit_for(node)
+        if isinstance(node, BreakNode):
+            if not self.loop_exit_stack:
+                raise CompileError(f"line {node.line}:{node.column}: break outside loop")
+            self.builder.branch(self.loop_exit_stack[-1])
+            return
         if isinstance(node, WhileNode):
             return self.visit_while(node)
         if isinstance(node, PrintNode):
@@ -3200,9 +3278,11 @@ class CodeGen:
 
     def visit_block(self, node):
         for stmt in node.statements:
+            if self.builder.block.is_terminated:
+                break
             self.visit_stmt(stmt)
 
-        if node.exit_node is not None:
+        if node.exit_node is not None and not self.builder.block.is_terminated:
             self.visit_exit(node.exit_node)
 
     def visit_if(self, node):
@@ -3299,18 +3379,53 @@ class CodeGen:
             body_bb
         )
 
-        self.visit_block(
-            node.body
-        )
+        self.loop_exit_stack.append(end_bb)
+        try:
+            self.visit_block(node.body)
+        finally:
+            self.loop_exit_stack.pop()
 
         if not self.builder.block.is_terminated:
-            self.builder.branch(
-                cond_bb
-            )
+            self.builder.branch(cond_bb)
 
         self.builder.position_at_end(
             end_bb
         )
+
+    def visit_for(self, node):
+        function = self.builder.block.function
+        ptr = self.create_entry_alloca(node.type_name, node.name)
+        start = self.coerce(self.visit_expr(node.start), node.start.type, node.type_name)
+        stop = self.coerce(self.visit_expr(node.stop), node.stop.type, node.type_name)
+        self.builder.store(start, ptr)
+        old = self.storage.get(node.loop_decl)
+        self.storage[node.loop_decl] = ptr
+        cond_bb = function.append_basic_block('for.cond')
+        body_bb = function.append_basic_block('for.body')
+        step_bb = function.append_basic_block('for.step')
+        end_bb = function.append_basic_block('for.end')
+        self.builder.branch(cond_bb)
+        self.builder.position_at_end(cond_bb)
+        current = self.builder.load(ptr, name='for.index')
+        cond = self.builder.icmp_signed('<', current, stop)
+        self.builder.cbranch(cond, body_bb, end_bb)
+        self.builder.position_at_end(body_bb)
+        self.loop_exit_stack.append(end_bb)
+        try:
+            self.visit_block(node.body)
+        finally:
+            self.loop_exit_stack.pop()
+        if not self.builder.block.is_terminated:
+            self.builder.branch(step_bb)
+        self.builder.position_at_end(step_bb)
+        next_value = self.builder.add(self.builder.load(ptr), ir.Constant(self.llvm_type(node.type_name), 1))
+        self.builder.store(next_value, ptr)
+        self.builder.branch(cond_bb)
+        self.builder.position_at_end(end_bb)
+        if old is None:
+            del self.storage[node.loop_decl]
+        else:
+            self.storage[node.loop_decl] = old
 
     def visit_exit(self, node):
         if self.current_function_result is not None:
@@ -3407,6 +3522,10 @@ KEYWORDS = {
     "if": "keyword",
     "else": "keyword",
     "while": "keyword",
+    "for": "keyword",
+    "in": "keyword",
+    "range": "keyword",
+    "break": "keyword",
     "struct": "keyword",
     "fn": "keyword",
     "read": "keyword",
