@@ -1,322 +1,378 @@
-# Languages and Compilers Course Project
+# Languages and Compilers — Project Stage 3
 
-This repository contains Stage 1 of the Languages and Compilers course project.
+## Overview
 
-The project implements a small programming language with a hand-written byte-based lexer, a recursive-descent parser, and an Abstract Syntax Tree (AST).
+This project implements a custom programming language compiler using Python and `llvmlite`. The compiler generates LLVM IR and supports native compilation through `llc` and `clang`.
 
-## Language Syntax and Features
+The language supports variables, `num32`, `num64`, `bool`, arithmetic, conditions, `while` loops, functions, structures, member functions, `read()` and `print()`.
 
-### Integer Types
+Stage 3 adds:
+- **Task 1:** Integer-range `for` loops and bonus `break`.
+- **Task 2:** AST optimization with unused variable elimination, unused function elimination, and function inlining.
+- **Task 3:** An interactive Savings Planner program.
 
-The language supports two integer types: `num32` and `num64`.
+Existing Stage 1 and Stage 2 programs remain supported.
 
-```text
-num32 x { 10 };
-num64 y { 100 };
-```
+## Setup and Usage
 
-### Integer Overflow
-
-Integer literal values are checked against the range of their declared type.
-
-`num32` supports values from `0` to `2147483647`.
-
-`num64` supports values from `0` to `9223372036854775807`.
-
-The following declarations are valid:
-
-```text
-num32 x { 2147483647 };
-num64 y { 9223372036854775807 };
-```
-
-A literal value larger than the maximum value of its declared integer type causes a compilation error.
-
-```text
-num32 x { 2147483648 };
-```
-
-Negative integer literals are not part of the current language grammar.
-
-### Boolean Type
-
-The language supports the `bool` type and the boolean values `true` and `false`.
-
-```text
-bool active { true };
-bool ready { false };
-```
-
-### Immutable Variables
-
-A variable is immutable by default.
-
-```text
-num32 x { 10 };
-```
-
-### Mutable Variables
-
-The `mut` keyword declares a mutable variable.
-
-```text
-num32 mut x { 10 };
-```
-
-### Assignment
-
-Assignment uses the `:=` operator.
-
-```text
-num32 mut x { 10 };
-x := 20;
-```
-
-### Arithmetic Expressions
-
-The language supports `+`, `-`, `*`, and `/`.
-
-```text
-num32 a { 1 + 2 };
-num32 b { 5 - 2 };
-num32 c { 2 * 3 };
-num32 d { 8 / 2 };
-```
-
-Normal arithmetic precedence is supported.
-
-```text
-num32 x { 1 + 2 * 3 };
-```
-
-Parentheses can be used to change the evaluation order.
-
-```text
-num32 x { (1 + 2) * 3 };
-```
-
-### Comparison Operators
-
-The language supports equality and inequality comparisons using `==` and `!=`.
-
-```text
-bool same { 10 == 10 };
-bool different { 10 != 20 };
-```
-
-### If Statement
-
-An `if` statement contains a condition and at least one statement in its block.
-
-```text
-bool active { true };
-num32 mut x { 10 };
-
-if active {
-    x := 20;
-}
-```
-
-### If / Else Statement
-
-The `else` block is optional. If present, it must also contain at least one statement.
-
-```text
-bool active { true };
-num32 mut x { 10 };
-
-if active {
-    x := 20;
-} else {
-    x := 30;
-}
-```
-
-### Nested If Statements
-
-`if` statements can be nested.
-
-```text
-bool active { true };
-bool ready { false };
-num32 mut x { 10 };
-
-if active {
-    if ready {
-        x := 20;
-    } else {
-        x := 30;
-    }
-}
-```
-
-## Grammar
-
-The complete EBNF grammar is stored in:
-
-```text
-grammar.ebnf
-```
-
-The parser accepts the syntax described by this grammar.
-
-The language uses a custom declaration syntax in which the initializer expression is placed inside braces.
-
-```text
-num32 x { 10 };
-```
-
-Mutable variables use the `mut` keyword:
-
-```text
-num32 mut x { 10 };
-```
-
-Assignment uses `:=`:
-
-```text
-x := 20;
-```
-
-## Lexer
-
-The lexer is hand-written and processes source code as bytes.
-
-Each token stores:
-
-- token kind;
-- token text;
-- line number;
-- column number.
-
-The lexer does not use regular expressions, `split()`, a lexer generator, or another generated lexer implementation.
-
-## Parser and AST
-
-The parser is implemented using recursive descent.
-
-It reads the token stream produced by the lexer and builds an Abstract Syntax Tree.
-
-The AST contains a class hierarchy for programs, statements, expressions, declarations, assignments, if statements, binary expressions, literals, and identifiers.
-
-Each AST node stores its source line and column.
-
-## Build Requirements
-
-The compiler is implemented in Python 3.
-
-There are no external dependencies and no separate build step is required.
-
-Check that Python 3 is installed:
+Requirements: Python 3, `llvmlite`, LLVM (`llc`), and Clang.
 
 ```bash
-python3 --version
+python3 -m pip install llvmlite
 ```
 
-The compiler source can also be checked for Python syntax errors with:
+Generate LLVM IR:
 
 ```bash
-python3 -m py_compile compiler.py
+python3 compiler.py input.txt output.ll
 ```
 
-## Running the Compiler
-
-Place a program in a source file such as `input.txt`.
-
-Run:
+Print the AST:
 
 ```bash
 python3 compiler.py --ast input.txt
 ```
 
-Example `input.txt`:
+Enable optimization:
 
-```text
-num32 mut x { 10 };
-num64 y { 100 };
-bool active { true };
-
-x := 20;
-
-if active {
-    x := 30;
-} else {
-    x := 40;
-}
+```bash
+python3 compiler.py input.txt output.ll --optimize
 ```
 
-The compiler prints an indented description of the generated AST.
+Print the optimized AST:
 
-## Error Reporting
+```bash
+python3 compiler.py --optimize --ast input.txt
+```
 
-Lexical and syntax errors are printed to standard error in the following format:
+The `--optimize` flag can appear anywhere in the command.
+
+Compilation errors are printed to stderr in the format:
 
 ```text
 compilation error: line L:C: message
 ```
 
-The compiler exits with a non-zero exit code when compilation fails and does not print an AST.
+Compilation failures return a non-zero exit code and do not create an output file.
 
-Integer literal overflow errors use the same error format.
+---
 
-## Running the Tests
+## Task 1 — New Language Feature: For Loops
 
-Valid programs and their expected AST output are stored in:
+I implemented integer-range `for` loops. The syntax is also included in `grammar.ebnf`.
 
-```text
-tests/ok/
-```
-
-Invalid programs and their expected error output are stored in:
+### Syntax and Rules
 
 ```text
-tests/err/
+for i in range(start, stop) {
+    statements
+}
 ```
 
-Each `.txt` test file has a corresponding `.expected` file.
+- `start` is inclusive and `stop` is exclusive.
+- The counter increases by 1.
+- Both bounds must be integer types (`num32` or `num64`).
+- The bounds are evaluated once before the loop.
+- The loop counter is read-only and scoped to its loop.
+- Nested loops and variables declared inside loops are supported.
+- If `start >= stop`, the loop executes zero times.
 
-Run the complete test suite with:
+### Example 1: For Loop
+
+```text
+num32 mut total{0}
+
+for i in range(0, 4) {
+    total := total + i
+}
+
+print(total)
+exit 0
+```
+
+Output:
+
+```text
+6
+Program exit with result 0
+```
+
+### Example 2: Nested Loops and Break
+
+```text
+num32 mut visits{0}
+
+for row in range(0, 3) {
+    for col in range(0, 5) {
+        if col == 2 {
+            break
+        }
+
+        visits := visits + 1
+    }
+}
+
+print(visits)
+exit 0
+```
+
+Output:
+
+```text
+6
+Program exit with result 0
+```
+
+### Bonus: Break
+
+The optional `break` statement immediately exits the innermost `for` or `while` loop. Using `break` outside a loop causes a compilation error.
+
+### LLVM IR Example
+
+Excerpt from the compiler-generated LLVM IR for `tests/stage3_feature_ok/for_range_basic.txt`:
+
+```llvm
+  store i32 0, i32* %"k"
+  br label %"for.cond"
+for.cond:
+  %"for.index" = load i32, i32* %"k"
+  %".5" = icmp slt i32 %"for.index", 5
+  br i1 %".5", label %"for.body", label %"for.end"
+for.body:
+  %"load_sum" = load i32, i32* %"sum"
+  %"load_k" = load i32, i32* %"k"
+  %"addtmp" = add i32 %"load_sum", %"load_k"
+  store i32 %"addtmp", i32* %"sum"
+  br label %"for.step"
+for.step:
+  %".9" = load i32, i32* %"k"
+  %".10" = add i32 %".9", 1
+  store i32 %".10", i32* %"k"
+  br label %"for.cond"
+```
+
+The initial `store` initializes the counter, and `icmp slt` checks whether it is below the upper bound. The conditional branch selects the loop body or the end, while the body performs the calculation. The `for.step` block increments the counter and branches back to `for.cond`, creating the loop's back edge.
+
+The LLVM IR is generated using `llvmlite.ir.IRBuilder`.
+
+### Feature Tests
+
+Valid examples:
+
+- `tests/stage3_feature_ok/for_range_basic.txt`
+- `tests/stage3_feature_ok/for_nested.txt`
+- `tests/stage3_feature_ok/for_break.txt`
+
+Invalid examples:
+
+- `tests/stage3_feature_err/for_bad_syntax.txt`
+- `tests/stage3_feature_err/for_bool_range.txt`
+- `tests/stage3_feature_err/for_assign_counter.txt`
+- `tests/stage3_feature_err/for_break_outside.txt`
+
+---
+
+## Task 2 — AST Optimizer
+
+The optimizer is implemented in `src/optimizer.py` and runs on the checked AST before LLVM IR generation.
+
+It supports three transformations.
+
+### 1. Unused Variables
+
+Removes declarations that are never read, together with unnecessary pure assignments. The pass repeats until no more unused declarations can be removed.
+
+It respects variable scopes and shadowing. Expressions containing side effects, such as `read()` or function calls, are preserved.
+
+### 2. Unused Functions
+
+Removes functions that are unreachable from the main program, including chains of unused functions.
+
+Structure member methods are conservatively preserved.
+
+### 3. Function Inlining
+
+Replaces a function called exactly once with its body at the call site.
+
+Parameters become uniquely renamed local variables initialized with the arguments, and the return expression replaces the function call.
+
+Recursive functions are never inlined.
+
+The implementation supports simple functions with a single return expression and direct call sites such as `print(f(...))`, `exit f(...)`, or variable initialization.
+
+More complex bodies, including early returns inside conditions, are left unchanged.
+
+### LLVM IR Before and After Inlining
+
+Example: `tests/stage3_opt/inlining_a.txt`.
+
+Before optimization:
+
+```llvm
+  %"call_twice" = call i32 @"user_twice"(i32 6)
+  %".2" = bitcast [4 x i8]* @"text_1" to i8*
+  %".3" = call i32 (i8*, ...) @"printf"(i8* %".2", i32 %"call_twice")
+```
+
+After optimization:
+
+```llvm
+  %"__inlined_twice_1_x" = alloca i32
+  store i32 6, i32* %"__inlined_twice_1_x"
+  %"load___inlined_twice_1_x" = load i32, i32* %"__inlined_twice_1_x"
+  %"load___inlined_twice_1_x.1" = load i32, i32* %"__inlined_twice_1_x"
+  %"addtmp" = add i32 %"load___inlined_twice_1_x", %"load___inlined_twice_1_x.1"
+  %".3" = bitcast [4 x i8]* @"text_1" to i8*
+  %".4" = call i32 (i8*, ...) @"printf"(i8* %".3", i32 %"addtmp")
+```
+
+The function call is replaced by the renamed parameter and arithmetic instructions. The unused function definition is removed. Both versions print the same output.
+
+In this example, LLVM IR decreased from 35 to 28 lines.
+
+### Optimizer Tests
+
+Six test programs are stored in `tests/stage3_opt/`:
+
+- `unused_variables_a.txt`
+- `unused_variables_b.txt`
+- `unused_functions_a.txt`
+- `unused_functions_b.txt`
+- `inlining_a.txt`
+- `inlining_b.txt`
+
+Each has an expected optimized AST (`.ast`) and output (`.expected`). The test script checks output with and without optimization and compares the optimized AST.
+
+---
+
+## Task 3 — Real Program: Savings Planner
+
+1. `programs/savings_planner.txt` is an interactive savings calculator.
+2. It asks the user how many deposits they want to enter.
+3. It reads the number of deposits using `read()`.
+4. It uses a `Savings` structure to store the total.
+5. The structure has an `add()` member function.
+6. A Stage 3 `for` loop processes each deposit.
+7. Each deposit is entered using `read()`.
+8. The program prints the running total after every deposit.
+9. A separate `twice()` function calculates a doubled savings goal.
+10. Finally, it prints the saved amount and doubled goal.
+
+### Recorded Sessions
+
+Session 1 uses three deposits:
+
+```text
+programs/savings_planner.in
+programs/savings_planner.expected
+```
+
+Session 2 uses zero deposits:
+
+```text
+programs/savings_planner_zero.in
+programs/savings_planner_zero.expected
+```
+
+Both sessions are executed by the test script.
+
+### Native Compilation
+
+Compile the program to a native executable using `llc` and `clang`:
+
+```bash
+python3 compiler.py programs/savings_planner.txt savings.ll
+llc -filetype=obj savings.ll -o savings.o
+clang savings.o -o savings_planner
+```
+
+Run interactively:
+
+```bash
+./savings_planner
+```
+
+Run recorded session 1:
+
+```bash
+./savings_planner < programs/savings_planner.in
+```
+
+Run recorded session 2:
+
+```bash
+./savings_planner < programs/savings_planner_zero.in
+```
+
+Compile the optimized version:
+
+```bash
+python3 compiler.py programs/savings_planner.txt savings_opt.ll --optimize
+llc -filetype=obj savings_opt.ll -o savings_opt.o
+clang savings_opt.o -o savings_planner_opt
+```
+
+---
+
+## Testing
+
+Run all test suites:
 
 ```bash
 python3 run_tests.py
+python3 run_stage2_tests.py
+python3 run_stage3_tests.py
 ```
 
-The test runner executes all valid and invalid cases, compares actual output with the expected output, and reports passed and failed tests.
+Verified results in Ubuntu:
 
-The current test suite contains:
+| Test Suite | Result |
+|---|---|
+| Stage 1 | 35/35 PASS |
+| Stage 2 | 37/37 PASS |
+| Stage 3 | 110/110 PASS |
+| **Total** | **182/182 PASS** |
 
-```text
-18 valid tests
-17 error tests
-35 tests total
-```
+Stage 3 tests include valid and invalid feature programs, optimizer AST comparisons, output equivalence with and without `--optimize`, Stage 2 regression tests, and recorded program sessions.
+
+Native compilation and interactive execution were also verified using `llc` and `clang`.
 
 ## Project Structure
 
 ```text
-.
-├── README.md
-├── ai_usage.txt
-├── compiler.py
-├── grammar.ebnf
-├── input.txt
-├── run_tests.py
-└── tests
-    ├── ok
-    └── err
+compiler.py
+src/
+    engine.py
+    stage1_frontend.py
+    optimizer.py
+grammar.ebnf
+README.md
+run_tests.py
+run_stage2_tests.py
+run_stage3_tests.py
+tests/
+    ok/
+    err/
+    stage2_ok/
+    stage2_err/
+    stage3_feature_ok/
+    stage3_feature_err/
+    stage3_opt/
+programs/
+    savings_planner.txt
+    savings_planner.in
+    savings_planner.expected
+    savings_planner_zero.in
+    savings_planner_zero.expected
+ai_usage_3.txt
 ```
 
-## Stage 1 Scope
+## Submission
 
-Stage 1 implements:
+Stage 3 is developed in the `stage3` branch created from `stage2`.
 
-- the language syntax and EBNF grammar;
-- a hand-written byte-based lexer;
-- a recursive-descent parser;
-- an AST class hierarchy;
-- AST output;
-- lexical and syntax error reporting;
-- integer literal overflow checks for `num32` and `num64`;
-- automated valid and invalid test cases.
+The pull request targets `main` and must be marked ready for review, with `vovaskochko` requested as reviewer. The PR must not be merged before review.
 
-Full semantic analysis and code generation are not implemented in Stage 1.
+The Moodle submission includes the pull request link and `ai_usage_3.txt`.
+
+Generated LLVM IR files, object files, executables, and temporary files must not be committed.

@@ -1,0 +1,5 @@
+fn twice := (num32 x) -> num32 {
+ exit x + x
+}
+print(twice(6))
+exit 0

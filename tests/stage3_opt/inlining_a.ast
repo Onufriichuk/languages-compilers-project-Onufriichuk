@@ -1,0 +1,9 @@
+Program
+  Decl __inlined_twice_1_x i32 const
+    Const 6
+  Print
+    BinOp +
+      Var __inlined_twice_1_x
+      Var __inlined_twice_1_x
+  Exit
+    Const 0

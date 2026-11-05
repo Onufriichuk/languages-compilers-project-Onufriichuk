@@ -1,0 +1,24 @@
+fn factorial := (num32 n) -> num32
+{
+ if n == 0
+ {
+  exit 1
+ }
+ else
+ {
+  exit n * factorial(n - 1)
+ }
+ exit 1
+}
+fn first := (num32 n) -> num32
+{
+ exit second(n)
+}
+fn second := (num32 n) -> num32
+{
+ exit n + 1
+}
+num32 x{first(4)}
+num32 y{factorial(5)}
+print(y)
+exit x

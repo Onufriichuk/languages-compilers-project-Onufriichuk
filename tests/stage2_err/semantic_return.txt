@@ -1,0 +1,4 @@
+fn get := () -> num32 {
+    exit true
+}
+exit 0

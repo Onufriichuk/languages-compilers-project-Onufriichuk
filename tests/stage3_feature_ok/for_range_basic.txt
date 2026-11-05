@@ -1,0 +1,6 @@
+num32 mut sum{0}
+for k in range(0, 5) {
+ sum := sum + k
+}
+print(sum)
+exit 0

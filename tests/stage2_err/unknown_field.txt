@@ -1,0 +1,7 @@
+struct Point
+{
+num32 x
+}
+Point p{1}
+print(p.z)
+exit 0

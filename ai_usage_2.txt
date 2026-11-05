@@ -1,0 +1,42 @@
+AI USAGE DISCLOSURE — STAGE 2
+
+## 1. AI Tools and Prompts
+
+I used ChatGPT (OpenAI) to help implement, adapt, debug, test, and document Stage 2.
+
+Full conversation: https://chatgpt.com/share/6ae0d365-9e9c-83eb-be43-d4e8eb3ebb7f
+
+My prompts covered analyzing Stage 1, adapting code from Practices 6–8, implementing LLVM IR generation, fixing compiler errors, updating the grammar and README, and testing the implementation.
+
+## 2. What Was Adopted and Modified
+
+- **Frontend:** I kept the original Stage 1 lexer, parser, and AST implementation in `src/stage1_frontend.py`.
+- **LLVM backend:** I reused most of my Practice 8 implementation in `src/engine.py`, with AI assistance to adapt it to the project.
+- **Compiler:** ChatGPT helped modify `compiler.py` to support the original `num32`/`num64` syntax, LLVM IR generation, and source-position mapping.
+- **Semantic analysis:** I reused and adapted the semantic checks for types, functions, structures, scopes, and mutability.
+- **Bug fixes:** With AI assistance, I fixed parenthesized expressions, division, nested structure initialization, and incorrect error positions.
+- **Tests:** ChatGPT helped create the Stage 2 test runner and additional valid and invalid tests. I ran the tests in my Ubuntu VM and updated expected diagnostics after fixing errors.
+- **Documentation:** ChatGPT helped write and revise `grammar.ebnf` and `README.md`.
+
+The original Stage 1 frontend and tests were retained. The LLVM backend was mostly adopted from my previous practices, while the compatibility layer, integration changes, fixes, and new tests were AI-assisted.
+
+## 3. My Understanding
+
+The normalization step converts my language syntax into the format understood by the reused compiler backend.
+
+The semantic analyzer checks types, function arguments, variable scopes, and mutability before generating LLVM IR.
+
+LLVM IRBuilder generates instructions for variables, arithmetic, functions, and control flow. Structures use GEP to access fields by index, while member functions receive a pointer to their object.
+
+Input and output use `scanf` and `printf`, which are linked through Clang.
+
+## 4. Verification
+
+I tested the implementation in my Ubuntu VM.
+
+- Stage 1: 35/35 tests passed.
+- Stage 2: 37/37 tests passed.
+
+I also checked recursion, forward function calls, nested structures, semantic errors, and source positions.
+
+The implementation was tested locally, but passing these tests does not guarantee that every hidden test will pass.

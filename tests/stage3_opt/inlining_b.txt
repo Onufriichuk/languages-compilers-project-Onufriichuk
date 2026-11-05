@@ -1,0 +1,7 @@
+fn combine := (num32 left, num32 right) -> num32 {
+ exit left + right
+}
+num32 x{8}
+num32 y{combine(x, 2)}
+print(y)
+exit 0

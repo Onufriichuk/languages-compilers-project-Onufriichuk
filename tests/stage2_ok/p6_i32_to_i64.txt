@@ -1,0 +1,6 @@
+fn widen := (num64 x) -> num64
+{
+exit x
+}
+num32 value{7}
+exit widen(value)

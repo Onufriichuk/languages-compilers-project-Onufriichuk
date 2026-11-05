@@ -1,0 +1,7 @@
+struct Point
+{
+num32 mut x
+}
+Point p{1}
+p.x := 2
+exit 0

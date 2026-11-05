@@ -1,0 +1,11 @@
+struct Point
+{
+num32 mut x
+}
+struct Circle
+{
+Point center
+}
+Circle mut c{{1}}
+c.center.x := 3
+exit 0

@@ -1,0 +1,2 @@
+num32 a{read(1)}
+exit a

@@ -1,0 +1,4 @@
+num32 a{10}
+num64 b{20}
+num64 c{a + b}
+exit c

@@ -1,0 +1,46 @@
+AI USAGE DISCLOSURE — STAGE 3
+
+**1. AI Tools Used**
+
+I used OpenAI ChatGPT (GPT-6) to help with code implementation, testing, debugging, and documentation.
+
+**2. Chat Transcript**
+
+Full ChatGPT conversation:
+https://chatgpt.com/share/6aec8faa-8c28-83ed-b7c4-3934ae2fff76
+
+**3. What I Used and Changed**
+
+**Task 1 — New Language Feature**
+
+ChatGPT generated the implementation of integer-range for loops and the bonus break statement, including parsing, semantic checks, LLVM IR generation, and tests.
+
+I used the generated code without changing its main logic. I integrated it into my Stage 2 project and tested it to make sure the existing functionality still worked.
+
+**Task 2 — Optimizer**
+
+ChatGPT generated the AST optimizer with unused variable elimination, unused function elimination, and function inlining.
+
+I used the implementation as generated and tested it with and without optimization. I also compared the LLVM IR before and after optimization to check that it became smaller.
+
+**Task 3 — Interactive Program**
+
+ChatGPT generated the Savings Planner program, which uses a structure, member function, regular function, read(), print(), and for loop.
+
+I used the program without changing its main logic. I compiled it using llc and clang and tested it with different inputs.
+
+**Documentation and Testing**
+
+ChatGPT helped generate the tests, update grammar.ebnf, and prepare README.md.
+
+I transferred the code to my Ubuntu VM, created the stage3 branch, and ran all tests. The results were 35/35 for Stage 1, 37/37 for Stage 2, and 110/110 for Stage 3.
+
+I requested README changes to match the assignment requirements and remove unnecessary explanations.
+
+**4. What I Understood**
+
+The for loop repeats the code for values within a given integer range. The compiler creates LLVM blocks to check the condition, execute the loop body, increase the counter, and exit the loop. Break allows the loop to stop early.
+
+The optimizer works on the AST before generating LLVM IR. It removes unused variables and functions and replaces some single-use function calls with their bodies. This reduces unnecessary code while keeping the program output the same.
+
+Savings Planner uses the new for loop to read several deposits. A structure and its member function store and update the total, and another function calculates the doubled savings goal.
